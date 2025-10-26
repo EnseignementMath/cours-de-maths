@@ -1,0 +1,23 @@
+---
+title: "{{ titre }}"
+date: {{ date }}
+classe: "{{ classe }}"
+chapitre: "{{ chapitre }}"
+---
+
+# {{ chapitre }} — {{ titre }} ({{ date }})
+
+{% if resume %}{{ resume }}{% endif %}
+
+{% if lien_externe %}
+Lien utile : [ouvrir]({{ lien_externe }})
+{% endif %}
+
+## Pièces jointes
+{% if pieces %}
+{% for p in pieces %}
+- [{{ p | replace('assets/', '') }}](/{{ p }})
+{% endfor %}
+{% else %}
+Aucune pièce jointe.
+{% endif %}
