@@ -1,0 +1,2 @@
+Placez ici votre fichier 'cahier_de_texte.ods' (non fourni dans ce ZIP).
+Colonnes attendues : date, classe, chapitre, titre, resume (opt), lien_externe (opt), pieces_jointes (opt ; séparées par ';').
