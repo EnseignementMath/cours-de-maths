@@ -1,0 +1,55 @@
+name: Deploy GitHub Pages from subfolder
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas odfpy jinja2
+
+      # (Optionnel) Génère les pages depuis l'ODS si présent
+      - name: Build site from ODS (if any)
+        working-directory: cours-de-maths_site/cours-de-maths
+        run: |
+          if [ -f "cahier_de_texte.ods" ]; then python build_site.py; fi
+
+      # Publie exactement le contenu du sous-dossier
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: cours-de-maths_site/cours-de-maths
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
