@@ -1,23 +1,47 @@
-import os, sys, pathlib, shutil, re
-import pandas as pd
+# -*- coding: utf-8 -*-
+# Génère des pages HTML prêtes à être servies par GitHub Pages (sans Jekyll).
+# Placez ce fichier dans: cours-de-maths_site/cours-de-maths/build_site.py
+# Dépendances: pandas, odfpy  (pip install pandas odfpy)
+
+import os
+import re
+import pathlib
 from datetime import datetime
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+import pandas as pd
+
+# ==============================
+# CONFIG
+# ==============================
 REPO_ROOT = pathlib.Path(__file__).parent.resolve()
-ODS_PATH = REPO_ROOT / "cahier_de_texte.ods"
-TEMPLATE_DIR = REPO_ROOT / "templates"
-OUTPUT_DIR = REPO_ROOT / "classes"
 
-def ensure_dir(p: pathlib.Path):
+ODS_PATH = REPO_ROOT / "cahier_de_texte.ods"  # nom attendu à la racine du site
+OUTPUT_DIR = REPO_ROOT / "classes"            # pages générées
+TARGET_CLASSES = {"5e"}                       # ne générer que ces classes (modifier si besoin)
+
+# Noms de colonnes tolérés (insensibles à la casse et aux accents)
+CAND_DATE = {"date", "jour"}
+CAND_CLASSE = {"classe", "classe "}
+CAND_CHAP = {"chapitre", "chapitre "}
+CAND_TITRE = {"titre", "intitulé", "intitule"}
+CAND_RESUME = {"resume", "résumé", "description"}
+CAND_LIEN = {"lien", "url", "lien_externe"}
+CAND_PJ = {"pieces_jointes", "pièces_jointes", "pj", "pieces", "pièces"}
+
+# ==============================
+# UTILITAIRES
+# ==============================
+def ensure_dir(p: pathlib.Path) -> None:
     p.mkdir(parents=True, exist_ok=True)
 
-def slugify(text: str, maxlen=80) -> str:
-    text = text.lower()
-    text = re.sub(r"[^\w\s-]", "", text)
-    text = re.sub(r"\s+", "-", text).strip("-")
-    return text[:maxlen] if len(text) > maxlen else text
+def slugify(text: str, maxlen: int = 80) -> str:
+    t = text.lower()
+    t = re.sub(r"[^\w\s-]", "", t, flags=re.UNICODE)
+    t = re.sub(r"\s+", "-", t).strip("-")
+    return t[:maxlen] if len(t) > maxlen else t
 
-def parse_date(value: str) -> str:
+def parse_date(value) -> str:
+    # pandas peut renvoyer Timestamp
     if isinstance(value, (pd.Timestamp, datetime)):
         return value.strftime("%Y-%m-%d")
     v = str(value).strip()
@@ -26,77 +50,202 @@ def parse_date(value: str) -> str:
             return datetime.strptime(v, fmt).strftime("%Y-%m-%d")
         except Exception:
             pass
+    # dernier recours ISO
     try:
         return datetime.fromisoformat(v).strftime("%Y-%m-%d")
     except Exception:
         raise ValueError(f"Date invalide: {value}")
 
-def parse_pieces(cell):
+def split_pieces(cell) -> list:
     if pd.isna(cell) or str(cell).strip() == "":
         return []
     parts = [str(p).strip().replace("\\", "/") for p in str(cell).split(";")]
     return [p for p in parts if p]
 
-def main():
-    if not ODS_PATH.exists():
-        print(f"ODS manquant: {ODS_PATH}", file=sys.stderr)
-        sys.exit(1)
+def norm_key(s: str) -> str:
+    s = s.strip().lower()
+    # remplace les accents courants
+    table = str.maketrans("éèêàïîôûùç", "eeea iouuc")
+    s = s.translate(table).replace(" ", "")
+    return s
 
-    df = pd.read_excel(ODS_PATH, sheet_name=0, engine="odf")
-    low = {c.lower().strip(): c for c in df.columns}
-    def getcol(*cands):
+def map_columns(df: pd.DataFrame) -> dict:
+    low = {norm_key(c): c for c in df.columns}
+    def find(cands):
         for c in cands:
-            if c in low: return low[c]
+            k = norm_key(c)
+            if k in low:
+                return low[k]
+        # aussi: si l'utilisateur a déjà mis exactement ce nom
+        for kraw, orig in low.items():
+            if kraw in cands:
+                return orig
         return None
+    cols = {}
+    cols["date"] = find(CAND_DATE)
+    cols["classe"] = find(CAND_CLASSE)
+    cols["chapitre"] = find(CAND_CHAP)
+    cols["titre"] = find(CAND_TITRE)
+    cols["resume"] = find(CAND_RESUME)
+    cols["lien"] = find(CAND_LIEN)
+    cols["pj"] = find(CAND_PJ)
+    # vérifs minimales
+    for need in ("date", "classe", "chapitre", "titre"):
+        if cols[need] is None:
+            raise SystemExit(f"Colonne requise manquante dans l'ODS: {need}")
+    return cols
 
-    c_date = getcol("date")
-    c_classe = getcol("classe")
-    c_chap = getcol("chapitre")
-    c_titre = getcol("titre","intitulé","intitule")
-    c_resume = getcol("resume","résumé","description")
-    c_lien = getcol("lien","lien_externe","url")
-    c_pj = getcol("pieces_jointes","pièces_jointes","pj","pieces","pièces")
+# ==============================
+# RENDER HTML
+# ==============================
+PAGE_STYLE = """
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial;
+     margin:24px; color:#0d1b2a; background:#f7f7fb;}
+a{color:#1d4ed8; text-decoration:none} a:hover{text-decoration:underline}
+.container{max-width:920px;margin:0 auto}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px}
+h1{font-size:28px;margin:0 0 10px} h2{font-size:20px;margin:20px 0 10px}
+ul{padding-left:20px}
+.tag{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:10px;padding:2px 8px;margin-left:8px;font-size:12px}
+.meta{color:#475569;font-size:14px}
+.footer{margin-top:28px;color:#64748b;font-size:14px}
+.list>li{margin:6px 0}
+</style>
+"""
 
-    for need, name in [(c_date,"date"),(c_classe,"classe"),(c_chap,"chapitre"),(c_titre,"titre")]:
-        if need is None:
-            raise SystemExit(f"Colonne requise manquante dans l'ODS: {name}")
+INDEX_CLASS_TEMPLATE = """<!doctype html>
+<html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Séances — {classe}</title>
+{style}
+<body><div class="container">
+  <h1>Séances — {classe}</h1>
+  <div class="card">
+    <p class="meta">Liste des séances publiées pour la classe de {classe}.</p>
+    <ul class="list">
+      {items}
+    </ul>
+  </div>
+  <p class="footer"><a href="/cours-de-maths/">Retour à l’accueil</a></p>
+</div></body></html>
+"""
 
-    env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)),
-                      autoescape=select_autoescape(["html","xml","md"]))
-    tpl = env.get_template("seance.md.j2")
+SESSION_TEMPLATE = """<!doctype html>
+<html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{chapitre} — {titre} ({date})</title>
+{style}
+<body><div class="container">
+  <h1>{chapitre} — {titre} <span class="tag">{date}</span></h1>
+  <p class="meta">Classe : {classe}</p>
+  {bloc_resume}
+  {bloc_lien}
+  <h2>Pièces jointes</h2>
+  {bloc_pieces}
+  <p class="footer"><a href="/cours-de-maths/classes/{classe}/">← Retour à {classe}</a></p>
+</div></body></html>
+"""
+
+def render_resume(resume: str) -> str:
+    if not resume:
+        return ""
+    return f'<div class="card"><p>{resume}</p></div>'
+
+def render_lien(url: str) -> str:
+    if not url:
+        return ""
+    return f'<h2>Lien utile</h2><div class="card"><a href="{url}" target="_blank" rel="noopener">{url}</a></div>'
+
+def render_pieces(pieces: list) -> str:
+    if not pieces:
+        return '<div class="card"><p>Aucune pièce jointe.</p></div>'
+    lis = []
+    for p in pieces:
+        label = p.replace("assets/", "")
+        lis.append(f'<li><a href="/cours-de-maths/{p}" target="_blank" rel="noopener">{label}</a></li>')
+    return '<div class="card"><ul class="list">' + "\n".join(lis) + "</ul></div>"
+
+# ==============================
+# MAIN
+# ==============================
+def main() -> int:
+    if not ODS_PATH.exists():
+        print(f"[ERREUR] ODS introuvable: {ODS_PATH}")
+        return 1
+
+    # lecture de la première feuille
+    df = pd.read_excel(ODS_PATH, sheet_name=0, engine="odf")
+    cols = map_columns(df)
+
+    # filtrage classes
+    df = df.copy()
+    df["__classe__"] = df[cols["classe"]].astype(str).str.strip()
+    if TARGET_CLASSES:
+        df = df[df["__classe__"].isin(TARGET_CLASSES)]
+
+    if df.empty:
+        print("[INFO] Aucune ligne à générer pour les classes ciblées.")
+        return 0
 
     generated = []
-    for _, row in df.iterrows():
-        date = parse_date(row[c_date])
-        classe = str(row[c_classe]).strip()
-        chapitre = str(row[c_chap]).strip()
-        titre = str(row[c_titre]).strip()
-        resume = "" if c_resume is None or pd.isna(row.get(c_resume, "")) else str(row[c_resume]).strip()
-        lien = "" if c_lien is None or pd.isna(row.get(c_lien, "")) else str(row[c_lien]).strip()
-        pieces = [] if c_pj is None else parse_pieces(row.get(c_pj, ""))
-
+    # regrouper par classe
+    for classe, sub in df.groupby("__classe__"):
         out_dir = OUTPUT_DIR / classe
         ensure_dir(out_dir)
-        slug = slugify(f"{chapitre}-{titre}")
-        out_path = out_dir / f"{date}-{slug}.md"
-        md = tpl.render(date=date, classe=classe, chapitre=chapitre, titre=titre,
-                        resume=resume if resume else None,
-                        lien_externe=lien if lien else None,
-                        pieces=pieces)
-        out_path.write_text(md, encoding="utf-8")
-        generated.append(out_path)
 
-    for classe_dir in OUTPUT_DIR.iterdir():
-        if classe_dir.is_dir():
-            files = sorted(classe_dir.glob("*.md"), reverse=True)
-            lines = ["# Séances", ""]
-            if not files:
-                lines.append("Aucune séance.")
-            for md in files:
-                lines.append(f"- [{md.stem}](/classes/{classe_dir.name}/{md.name})")
-            (classe_dir / "index.md").write_text("\n".join(lines)+"\n", encoding="utf-8")
+        items_li = []
 
-    print(f"OK - séances générées: {len(generated)}")
+        for _, row in sub.iterrows():
+            try:
+                date = parse_date(row[cols["date"]])
+            except Exception as e:
+                raise SystemExit(f"Date invalide sur une ligne ({e})")
+
+            chapitre = str(row[cols["chapitre"]]).strip()
+            titre = str(row[cols["titre"]]).strip()
+
+            resume = ""
+            if cols["resume"] and pd.notna(row.get(cols["resume"], "")):
+                resume = str(row[cols["resume"]]).strip()
+
+            lien = ""
+            if cols["lien"] and pd.notna(row.get(cols["lien"], "")):
+                lien = str(row[cols["lien"]]).strip()
+
+            pieces = []
+            if cols["pj"]:
+                pieces = split_pieces(row.get(cols["pj"], ""))
+
+            slug = slugify(f"{chapitre}-{titre}")
+            page_name = f"{date}-{slug}.html"
+            page_path = out_dir / page_name
+
+            html = SESSION_TEMPLATE.format(
+                style=PAGE_STYLE,
+                chapitre=chapitre,
+                titre=titre,
+                date=date,
+                classe=classe,
+                bloc_resume=render_resume(resume),
+                bloc_lien=render_lien(lien),
+                bloc_pieces=render_pieces(pieces),
+            )
+            page_path.write_text(html, encoding="utf-8")
+            generated.append(page_path)
+
+            items_li.append(
+                f'<li><a href="/cours-de-maths/classes/{classe}/{page_name}">{date} — {chapitre} : {titre}</a></li>'
+            )
+
+        # index.html de la classe
+        index_html = INDEX_CLASS_TEMPLATE.format(
+            style=PAGE_STYLE,
+            classe=classe,
+            items="\n".join(sorted(items_li, reverse=True)),
+        )
+        (out_dir / "index.html").write_text(index_html, encoding="utf-8")
+
+    print(f"[OK] Fichiers générés: {len(generated)}")
+    return 0
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
