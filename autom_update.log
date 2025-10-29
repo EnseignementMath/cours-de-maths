@@ -12,3 +12,33 @@
 [2025-10-29 21:40:02] [INFO] Nouvelle version copiée.
 [2025-10-29 21:40:08] [INFO] Export script terminé (code=0).
 [2025-10-29 21:40:12] [INFO] Git push effectué.
+[2025-10-29 23:26:34] === Démarrage surveillance (mtime+taille) ===
+[2025-10-29 23:26:34] [INIT] 2nde_7 -> C:\Users\Utilisateur\Desktop\Lycee_Felix_Faure\Seconde\2nde_7\2nde_7_Progression.ods
+[2025-10-29 23:26:34] [INIT] Signature initiale: (1761770397, 14931)
+[2025-10-29 23:26:34] [INIT] 302 -> C:\Users\Utilisateur\Mon Drive\Enseignement\College Montherlant 2025-2026\302\302_Progression.ods
+[2025-10-29 23:26:34] [INIT] Signature initiale: (1761771482, 18764)
+[2025-10-29 23:26:34] [INIT] 407 -> C:\Users\Utilisateur\Mon Drive\Enseignement\College Montherlant 2025-2026\407\407_Progression.ods
+[2025-10-29 23:26:34] [INIT] Signature initiale: (1761776163, 19416)
+[2025-10-29 23:26:37] [INFO] Fichiers stables : ['2nde_7', '302', '407'] → lancement export
+[2025-10-29 23:26:39] [INFO] Export terminé (code=0).
+[2025-10-29 23:26:42] [INFO] Git push effectué.
+[2025-10-29 23:31:37] === Démarrage surveillance (mtime+taille) ===
+[2025-10-29 23:31:37] [INIT] 2nde_7 -> C:\Users\Utilisateur\Desktop\Lycee_Felix_Faure\Seconde\2nde_7\2nde_7_Progression.ods
+[2025-10-29 23:31:37] [INIT] Signature initiale: (1761770397, 14931)
+[2025-10-29 23:31:37] [INIT] 302 -> C:\Users\Utilisateur\Mon Drive\Enseignement\College Montherlant 2025-2026\302\302_Progression.ods
+[2025-10-29 23:31:37] [INIT] Signature initiale: (1761771482, 18764)
+[2025-10-29 23:31:37] [INIT] 407 -> C:\Users\Utilisateur\Mon Drive\Enseignement\College Montherlant 2025-2026\407\407_Progression.ods
+[2025-10-29 23:31:37] [INIT] Signature initiale: (1761776163, 19416)
+[2025-10-29 23:31:40] [INFO] Fichiers stables : ['2nde_7', '302', '407'] → lancement export
+[2025-10-29 23:31:46] [INFO] Export terminé (code=0).
+[2025-10-29 23:31:50] [INFO] Git push effectué.
+[2025-10-29 23:32:01] === Démarrage surveillance (mtime+taille) ===
+[2025-10-29 23:32:01] [INIT] 2nde_7 -> C:\Users\Utilisateur\Desktop\Lycee_Felix_Faure\Seconde\2nde_7\2nde_7_Progression.ods
+[2025-10-29 23:32:01] [INIT] Signature initiale: (1761770397, 14931)
+[2025-10-29 23:32:01] [INIT] 302 -> C:\Users\Utilisateur\Mon Drive\Enseignement\College Montherlant 2025-2026\302\302_Progression.ods
+[2025-10-29 23:32:01] [INIT] Signature initiale: (1761771482, 18764)
+[2025-10-29 23:32:01] [INIT] 407 -> C:\Users\Utilisateur\Mon Drive\Enseignement\College Montherlant 2025-2026\407\407_Progression.ods
+[2025-10-29 23:32:01] [INIT] Signature initiale: (1761776163, 19416)
+[2025-10-29 23:32:04] [INFO] Fichiers stables : ['2nde_7', '302', '407'] → lancement export
+[2025-10-29 23:32:06] [INFO] Export terminé (code=0).
+[2025-10-29 23:32:09] [INFO] Git push effectué.
