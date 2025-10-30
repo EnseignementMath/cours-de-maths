@@ -1,15 +1,21 @@
 [
   {
     "level": "College",
-    "class": "302",
-    "title": "Collège Montherlant – 3e2",
-    "url": "/cours-de-maths/progressions/College/302.html"
+    "class": "308",
+    "title": "Collège La Rochefoucault – 3e8",
+    "url": "/cours-de-maths/progressions/College/308.html"
   },
   {
     "level": "College",
-    "class": "308",
-    "title": "Collège Montherlant – 3e8",
-    "url": "/cours-de-maths/progressions/College/308.html"
+    "class": "507",
+    "title": "Collège La Rochefoucault – 5e7",
+    "url": "/cours-de-maths/progressions/College/507.html"
+  },
+  {
+    "level": "College",
+    "class": "302",
+    "title": "Collège Montherlant – 3e2",
+    "url": "/cours-de-maths/progressions/College/302.html"
   },
   {
     "level": "College",
@@ -19,20 +25,14 @@
   },
   {
     "level": "College",
-    "class": "507",
-    "title": "Collège Montherlant – 5e7",
-    "url": "/cours-de-maths/progressions/College/507.html"
+    "class": "5_Grp_1",
+    "title": "Collège Montherlant – 5_Grp_1",
+    "url": "/cours-de-maths/progressions/College/5_Grp_1.html"
   },
   {
     "level": "Seconde",
     "class": "2nde_7",
-    "title": "Seconde – Seconde 27",
+    "title": "Seconde – Seconde 7",
     "url": "/cours-de-maths/progressions/Seconde/2nde_7.html"
-  },
-  {
-    "level": "Seconde",
-    "class": "test",
-    "title": "Seconde – test",
-    "url": "/cours-de-maths/progressions/Seconde/test.html"
   }
 ]
